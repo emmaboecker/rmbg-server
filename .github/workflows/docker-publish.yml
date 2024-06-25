@@ -56,7 +56,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Download model
-        run: curl https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx?download=true -o model.onnx
+        run: curl -fSL https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx?download=true -o model.onnx
         
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
