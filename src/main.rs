@@ -1,14 +1,17 @@
 use std::env;
-use std::io::{Cursor};
+use std::io::Cursor;
 use std::sync::Arc;
 
+use crate::shutdown::shutdown_signal;
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::{header, StatusCode};
 use axum::response::{Html, IntoResponse};
-use axum::Router;
 use axum::routing::{get, post};
+use axum::Router;
 use image::{ImageError, ImageFormat};
 use rmbg::Rmbg;
+
+mod shutdown;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -22,11 +25,17 @@ async fn main() -> eyre::Result<()> {
         .layer(DefaultBodyLimit::disable())
         .with_state(Arc::new(rmbg));
 
-    let listener = tokio::net::TcpListener::bind(env::var("BIND_URL").unwrap_or("0.0.0.0:3000".to_string())).await.unwrap();
+    let listener =
+        tokio::net::TcpListener::bind(env::var("BIND_URL").unwrap_or("0.0.0.0:3000".to_string()))
+            .await
+            .unwrap();
 
     tracing::info!("Listening on: {}", listener.local_addr().unwrap());
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 
     Ok(())
 }
@@ -41,33 +50,59 @@ async fn remove_background(
 ) -> Result<impl IntoResponse, impl IntoResponse> {
     let field = match multipart.next_field().await.unwrap() {
         Some(field) => field,
-        None => return Err((StatusCode::BAD_REQUEST, "No file found in request".to_string()))
+        None => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "No file found in request".to_string(),
+            ))
+        }
     };
 
     let mut filename = match field.file_name() {
         Some(name) => name.to_string(),
-        None => return Err((StatusCode::BAD_REQUEST, "File name couldn't be determined".to_string()))
+        None => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "File name couldn't be determined".to_string(),
+            ))
+        }
     };
 
     let data = field.bytes().await.unwrap();
-
 
     let mut format = image::guess_format(&data).unwrap();
 
     let original_img = match image::load_from_memory_with_format(&data, format) {
         Ok(img) => img,
-        Err(err) => return Err((StatusCode::BAD_REQUEST, format!("Failed to load image: {}", err)))
+        Err(err) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("Failed to load image: {}", err),
+            ))
+        }
     };
 
     let img_without_bg = match rmbg.remove_background(&original_img) {
         Ok(img) => img,
-        Err(err) => return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to remove background: {}", err)))
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to remove background: {}", err),
+            ))
+        }
     };
 
     let mut bytes: Vec<u8> = Vec::new();
-    if let Err(ImageError::Unsupported(_)) = img_without_bg.write_to(&mut Cursor::new(&mut bytes), format) {
-        img_without_bg.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png).unwrap();
-        tracing::debug!("Uploaded unsupported image format {}, converting to PNG", format.to_mime_type());
+    if let Err(ImageError::Unsupported(_)) =
+        img_without_bg.write_to(&mut Cursor::new(&mut bytes), format)
+    {
+        img_without_bg
+            .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
+            .unwrap();
+        tracing::debug!(
+            "Uploaded unsupported image format {}, converting to PNG",
+            format.to_mime_type()
+        );
         format = ImageFormat::Png;
         filename.push_str(".png");
     }
