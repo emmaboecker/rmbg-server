@@ -22,7 +22,7 @@ async fn main() -> eyre::Result<()> {
         .layer(DefaultBodyLimit::disable())
         .with_state(Arc::new(rmbg));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(env::var("BIND_URL").unwrap_or("0.0.0.0:3000".to_string())).await.unwrap();
 
     tracing::info!("Listening on: {}", listener.local_addr().unwrap());
 
