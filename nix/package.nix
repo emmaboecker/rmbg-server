@@ -16,4 +16,6 @@ in
       homepage = "https://github.com/emmaboecker/rmbg-server";
       license = licenses.agpl3Only;
     };
+
+    ORT_LIB_LOCATION="${nixpkgs.onnxruntime}/lib/libonnxruntime.so";
   }
