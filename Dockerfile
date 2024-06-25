@@ -16,4 +16,5 @@ RUN cargo build --release --bin railboard-api
 FROM scratch AS runtime
 COPY --from=builder /usr/src/target/release/railboard-api /railboard-api
 COPY --from=chef /usr/src/model.onnx /model.onnx
+ENV MODEL_PATH=/model.onnx
 ENTRYPOINT ["/rmbg-server"]

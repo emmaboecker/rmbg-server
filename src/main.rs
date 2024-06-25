@@ -1,3 +1,4 @@
+use std::env;
 use std::io::{Cursor};
 use std::sync::Arc;
 
@@ -13,7 +14,7 @@ use rmbg::Rmbg;
 async fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt::init();
 
-    let rmbg = Rmbg::new("./model.onnx")?;
+    let rmbg = Rmbg::new(env::var("MODEL_PATH").unwrap_or("./model.onnx".to_string()))?;
 
     let app = Router::new()
         .route("/", get(root_get))
