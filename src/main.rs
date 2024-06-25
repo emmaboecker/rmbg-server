@@ -8,7 +8,7 @@ use axum::http::{header, StatusCode};
 use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
 use axum::Router;
-use image::{ImageError, ImageFormat};
+use image::{ImageError, ImageFormat, ImageResult};
 use rmbg::Rmbg;
 
 mod shutdown;
@@ -70,7 +70,15 @@ async fn remove_background(
 
     let data = field.bytes().await.unwrap();
 
-    let mut format = image::guess_format(&data).unwrap();
+    let mut format = match image::guess_format(&data) {
+        Ok(format) => format,
+        Err(_) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid image uploaded".to_string(),
+            ))
+        }
+    };
 
     let original_img = match image::load_from_memory_with_format(&data, format) {
         Ok(img) => img,
