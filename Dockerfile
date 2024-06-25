@@ -11,7 +11,7 @@ FROM chef AS builder
 COPY --from=planner /usr/src/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN cargo build --release --bin railboard-api
+RUN cargo build --release --features impure
 
 FROM scratch AS runtime
 COPY --from=builder /usr/src/target/release/railboard-api /railboard-api

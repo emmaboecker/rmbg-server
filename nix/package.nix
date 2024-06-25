@@ -1,4 +1,4 @@
-{ lib, fenix, nixpkgs, system, ... }:
+{ lib, fenix, nixpkgs, system, onnxruntime, ... }:
 let
   toolchain = fenix.packages.${system}.minimal.toolchain;
   pkgs = nixpkgs.legacyPackages.${system};
@@ -16,4 +16,10 @@ in
       homepage = "https://github.com/emmaboecker/rmbg-server";
       license = licenses.agpl3Only;
     };
+
+    buildInputs = [
+      onnxruntime
+    ];
+
+    ORT_LIB_LOCATION="${pkgs.onnxruntime}/lib/";
   }
