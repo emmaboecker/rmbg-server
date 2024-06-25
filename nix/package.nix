@@ -17,5 +17,9 @@ in
       license = licenses.agpl3Only;
     };
 
-    ORT_LIB_LOCATION="${nixpkgs.onnxruntime}/lib/libonnxruntime.so";
+    buildInputs = [
+      onnxruntime
+    ];
+
+    ORT_LIB_LOCATION="${pkgs.onnxruntime}/lib/";
   }
