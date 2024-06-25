@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-alpine AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-bullseye AS chef
 WORKDIR /usr/src
 
 COPY model.onnx .
