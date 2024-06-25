@@ -7,6 +7,6 @@
     meta = with lib; {
       description = config.description;
       homepage = "https://github.com/emmaboecker/rmbg-server";
-      license = licenses.agpl3;
+      license = licenses.agpl3Only;
     };
   }
